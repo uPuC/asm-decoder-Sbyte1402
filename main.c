@@ -21,6 +21,9 @@ const uint16_t inst16_table[] = {
     0x3D,   // BRBC
     0xD,    // RCALL
     0x2,    // SBC
+    0x7,    // ADC
+    0x1,    // MOVW
+    0x5,    // SUBI
 };
 
 enum{
@@ -31,7 +34,10 @@ enum{
     e_CPI,
     e_BRBC,
     e_RCALL,
-    e_SBC
+    e_SBC,
+    e_ADC,
+    e_MOVW,
+    e_SUBI,
 };
 
 
@@ -50,14 +56,14 @@ typedef union{
         uint16_t d5:5;
         uint16_t r1:1;
         uint16_t op6:6;
-    }type2; // e.g.: MOV,MUL,ADC,ADD,AND, SBC
+    }type2; // e.g.: MOV,MUL,ADC,ADD,AND, SBC,
     
     struct{
         uint16_t kl4: 4;
         uint16_t d4: 4;
         uint16_t kh4: 4;
         uint16_t op4: 4;
-    }type3; // e.g.: LDI, CPI
+    }type3; // e.g.: LDI, CPI, SUBI
     
     struct{
         uint16_t s3: 3;
@@ -69,6 +75,12 @@ typedef union{
         uint16_t k12: 12;
         uint16_t op4: 4;
     }type5; // e.g.: RCALL
+
+    struct{
+        uint16_t r4: 4;
+        uint16_t d4: 4;
+        uint16_t op8: 8;
+    }type6; // e.g.: MOVW
 }Op_Code_t;
 
 
@@ -83,6 +95,16 @@ int main(){
 
         if (instruction -> op16 == inst16_table[e_NOP]) {
             printf("NOP\n");
+        } else if (instruction -> type6.op8 == inst16_table[e_MOVW]) {
+            uint8_t Rd = instruction -> type6.d4 * 2;
+            uint8_t Rr = instruction -> type6.r4 * 2;
+
+            printf("MOVW R%d:R%d, R%d:R%d\n", Rd+1, Rd, Rr+1, Rr);
+        } else if (instruction -> type4.op6 == inst16_table[e_BRBC]) {
+            uint8_t flag = instruction -> type4.s3;
+            uint8_t offset = instruction -> type4.k7;
+
+            printf("BRBC %d, 0x%X\n", flag, offset);
         } else if (instruction -> type2.op6 == inst16_table[e_EOR]) {
             uint8_t Rd = instruction -> type2.d5;
             uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction ->type2.r4);
@@ -92,11 +114,16 @@ int main(){
             }else{
                 printf("EOR R%d, R%d\n", Rd, Rr);
             }
-        } else if (instruction -> type3.op4 == inst16_table[e_LDI]) {
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = instruction -> type3.d4;
+        } else if (instruction -> type2.op6 == inst16_table[e_SBC]) {
+            uint8_t Rd = instruction -> type2.d5;
+            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
+            
+            printf("SBC R%d, R%d\n", Rd, Rr);
+        } else if (instruction -> type2.op6 == inst16_table[e_ADC]) {
+            uint8_t Rd = instruction -> type2.d5;
+            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
 
-            printf("LDI R%d, %d\n", Rd, k);
+            printf("ADC R%d, R%d\n", Rd, Rr);
         } else if ((instruction -> type1.op7 | (instruction -> type1.op4 >> 2)) == inst16_table[e_LDX]) {
             uint8_t Rd = instruction -> type1.d5;
             uint8_t op = instruction -> type1.op4;
@@ -108,25 +135,25 @@ int main(){
             } else {
                 printf("LD R%d, -X\n", Rd);
             }
-        } else if (instruction -> type3.op4 == inst16_table[e_CPI]) {
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = (instruction -> type3.d4);
-
-            printf("CPI R%d, %d\n", Rd, k);
-        } else if (instruction -> type4.op6 == inst16_table[e_BRBC]) {
-            uint8_t flag = instruction -> type4.s3;
-            uint8_t offset = instruction -> type4.k7;
-
-            printf("BRBC %d, 0x%X\n", flag, offset);
         } else if (instruction -> type5.op4 == inst16_table[e_RCALL]) {
             uint16_t k = instruction -> type5.k12;
 
             printf("RCALL 0x%X\n", k);
-        } else if (instruction -> type2.op6 == inst16_table[e_SBC]) {
-            uint8_t Rd = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
-            uint8_t Rr = instruction -> type2.d5;
-            
-            printf("SBC R%d, R%d\n", Rd, Rr);
+        } else if (instruction -> type3.op4 == inst16_table[e_LDI]) {
+            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
+            uint8_t Rd = instruction -> type3.d4 + 16;
+
+            printf("LDI R%d, %d\n", Rd, k);
+        } else if (instruction -> type3.op4 == inst16_table[e_CPI]) {
+            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
+            uint8_t Rd = (instruction -> type3.d4) + 16;
+
+            printf("CPI R%d, %d\n", Rd, k);
+        } else if (instruction -> type3.op4 == inst16_table[e_SUBI]) {
+            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
+            uint8_t Rd = (instruction -> type3.d4) + 16;
+
+            printf("SUBI R%d, 0x%X\n", Rd, k);
         } else {
             printf("unknown\n");
         }
