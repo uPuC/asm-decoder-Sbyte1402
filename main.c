@@ -16,6 +16,7 @@ const uint16_t inst16_table[] = {
     0x0,    // NOP
     0x9,    // EOR, CLR
     0xE,    // LDI
+    0x97,   // SBIW
     0x4B,   // LD_X
     0x3,    // CPI
     0x3D,   // BRBC
@@ -30,6 +31,7 @@ enum{
     e_NOP,
     e_EOR,
     e_LDI,
+    e_SBIW,
     e_LDX,
     e_CPI,
     e_BRBC,
@@ -81,6 +83,13 @@ typedef union{
         uint16_t d4: 4;
         uint16_t op8: 8;
     }type6; // e.g.: MOVW
+
+    struct{
+        uint16_t kl4: 4;
+        uint16_t d2: 2;
+        uint16_t kh2: 2;
+        uint16_t op8: 8;
+    }type7; // e.g.: SBIW
 }Op_Code_t;
 
 
@@ -100,6 +109,11 @@ int main(){
             uint8_t Rr = instruction -> type6.r4 * 2;
 
             printf("MOVW R%d:R%d, R%d:R%d\n", Rd+1, Rd, Rr+1, Rr);
+        } else if (instruction -> type7.op8 == inst16_table[e_SBIW]) {
+            uint8_t k = (instruction -> type7.kh2 << 4) | (instruction -> type7.kl4);
+            uint8_t Rd = instruction -> type7.d2 + 24;
+
+            printf("SBIW R%d, 0x%X\n", Rd, k);
         } else if (instruction -> type4.op6 == inst16_table[e_BRBC]) {
             uint8_t flag = instruction -> type4.s3;
             uint8_t offset = instruction -> type4.k7;
@@ -136,7 +150,7 @@ int main(){
                 printf("LD R%d, -X\n", Rd);
             }
         } else if (instruction -> type5.op4 == inst16_table[e_RCALL]) {
-            uint16_t k = instruction -> type5.k12;
+            uint16_t k = instruction -> type5.k12 + 1;
 
             printf("RCALL 0x%X\n", k);
         } else if (instruction -> type3.op4 == inst16_table[e_LDI]) {
