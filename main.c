@@ -133,11 +133,7 @@ int main(){
             uint8_t Rd = instruction -> type2.d5;
             uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction ->type2.r4);
 
-            if(Rd == Rr){
-                printf("CLR R%d\n", Rd);
-            }else{
-                printf("EOR R%d, R%d\n", Rd, Rr);
-            }
+            (Rd == Rr) ? (printf("CLR R%d\n", Rd)):(printf("EOR R%d, R%d\n", Rd, Rr));
         } else if (instruction -> type2.op6 == inst16_table[e_SBC]) {
             printType2(instruction, "SBC");
 
@@ -154,13 +150,7 @@ int main(){
             uint8_t Rd = instruction -> type1.d5;
             uint8_t op = instruction -> type1.op4;
 
-            if (op == 0xC) {
-                printf("LD R%d, X\n", Rd);
-            } else if (op == 0xD) {
-                printf("LD R%d, X+\n", Rd);
-            } else {
-                printf("LD R%d, -X\n", Rd);
-            }
+            (op == 0xC) ? (printf("LD R%d, X\n", Rd)):((op == 0xD) ? (printf("LD R%d, X+\n", Rd)):(printf("LD R%d, -X\n", Rd)));
         } else if (instruction -> type1.op7 == inst16_table[e_INC]) {
             uint8_t Rd = instruction -> type1.d5;
 
