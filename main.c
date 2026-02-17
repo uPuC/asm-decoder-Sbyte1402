@@ -100,6 +100,8 @@ typedef union{
     }type7; // e.g.: SBIW
 }Op_Code_t;
 
+void printType2(const Op_Code_t*, const char*);
+void printType3(const Op_Code_t*, const char*);
 
 int main(){
     Op_Code_t *instruction;
@@ -112,7 +114,7 @@ int main(){
 
         if (instruction -> op16 == inst16_table[e_NOP]) {                               // op16
             printf("NOP\n");
-        } else if (instruction -> type6.op8 == inst16_table[e_MOVW]) {
+        } else if (instruction -> type6.op8 == inst16_table[e_MOVW]) {                  // Type 6
             uint8_t Rd = instruction -> type6.d4 * 2;
             uint8_t Rr = instruction -> type6.r4 * 2;
 
@@ -137,25 +139,17 @@ int main(){
                 printf("EOR R%d, R%d\n", Rd, Rr);
             }
         } else if (instruction -> type2.op6 == inst16_table[e_SBC]) {
-            uint8_t Rd = instruction -> type2.d5;
-            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
-            
-            printf("SBC R%d, R%d\n", Rd, Rr);
+            printType2(instruction, "SBC");
+
         } else if (instruction -> type2.op6 == inst16_table[e_ADC]) {
-            uint8_t Rd = instruction -> type2.d5;
-            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
+            printType2(instruction, "ADC");
 
-            printf("ADC R%d, R%d\n", Rd, Rr);
         } else if (instruction -> type2.op6 == inst16_table[e_CP]) {
-            uint8_t Rd = instruction -> type2.d5;
-            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
+            printType2(instruction, "CP");
 
-            printf("CP R%d, R%d\n", Rd, Rr);
         } else if (instruction -> type2.op6 == inst16_table[e_MOV]) {
-             uint8_t Rd = instruction -> type2.d5;
-            uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
+            printType2(instruction, "MOV");
 
-            printf("MOV R%d, R%d\n", Rd, Rr);
         } else if ((instruction -> type1.op7 | (instruction -> type1.op4 >> 2)) == inst16_table[e_LDX]) {   // Type 1
             uint8_t Rd = instruction -> type1.d5;
             uint8_t op = instruction -> type1.op4;
@@ -176,29 +170,35 @@ int main(){
 
             printf("RCALL 0x%X\n", k);
         } else if (instruction -> type3.op4 == inst16_table[e_LDI]) {                   // Type 3
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = instruction -> type3.d4 + 16;
-
-            printf("LDI R%d, %d\n", Rd, k);
+            printType3(instruction, "LDI");
+            
         } else if (instruction -> type3.op4 == inst16_table[e_CPI]) {
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = (instruction -> type3.d4) + 16;
+            printType3(instruction, "CPI");
 
-            printf("CPI R%d, %d\n", Rd, k);
         } else if (instruction -> type3.op4 == inst16_table[e_SUBI]) {
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = (instruction -> type3.d4) + 16;
+            printType3(instruction, "SUBI");
 
-            printf("SUBI R%d, 0x%X\n", Rd, k);
         } else if (instruction -> type3.op4 == inst16_table[e_ORI]) {
-            uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
-            uint8_t Rd = (instruction -> type3.d4) + 16;
+            printType3(instruction, "ORI");
 
-            printf("ORI R%d, 0x%X\n", Rd, k);
         } else {
             printf("unknown\n");
         }
     }
 
     return 0;
+}
+
+void printType2(const Op_Code_t *instruction, const char *OP){
+    uint8_t Rd = instruction -> type2.d5;
+    uint8_t Rr = (instruction -> type2.r1 << 4) | (instruction -> type2.r4);
+
+    printf("%s R%d, R%d\n", OP, Rd, Rr);
+}
+
+void printType3(const Op_Code_t *instruction, const char *OP){
+    uint8_t k = (instruction -> type3.kh4 << 4) | (instruction -> type3.kl4);
+    uint8_t Rd = instruction -> type3.d4 + 16;
+
+    printf("%s R%d, %d\n", OP, Rd, k);
 }
